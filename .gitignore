@@ -4,3 +4,5 @@ saved.usernames.txt
 usernames.txt
 
 .idea/
+
+venv/
