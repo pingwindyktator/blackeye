@@ -95,9 +95,9 @@ if __name__ == '__main__':
     import argparse, sys, time
 
     p = argparse.ArgumentParser(description="DNS Intercept Proxy")
-    p.add_argument("--port", "-p", type=int, default=5053,
+    p.add_argument("--port", "-p", type=int, default=53,
                    metavar="<port>",
-                   help="Local proxy port (default:5053)")
+                   help="Local proxy port (default:53)")
     p.add_argument("--address", "-a", default="",
                    metavar="<address>",
                    help="Local proxy listen address (default:all)")
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     args = p.parse_args()
 
     args.dns, _, args.dns_port = args.upstream.partition(':')
-    args.dns_port = int(args.dns_port or 5053)
+    args.dns_port = int(args.dns_port or 53)
 
     resolver = InterceptResolver(args.dns,
                                  args.dns_port,
